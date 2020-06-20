@@ -11,25 +11,56 @@
 #if _LIBCPP_VERSION
 #   if defined(__APPLE__)
 #       include <dispatch/dispatch.h>
+        static inline bool __libcpp_semaphore_wait_timed(dispatch_semaphore_t* __sem, struct timespec* __ts)
+        {
+            return dispatch_semaphore_wait(*__sem, dispatch_walltime(__ts, 0)) == 0;
+        }
 #   else
 #       include <semaphore.h>
+        static inline bool __libcpp_semaphore_wait_timed(sem_t* __sem, struct timespec* __ts)
+        {
+            return sem_timedwait(__sem, __ts) == 0;
+        }
 #   endif
     _LIBCPP_BEGIN_NAMESPACE_STD
     struct counting_semaphore
     {
 #   if defined(__APPLE__)
-        dispatch_semaphore_t semaphore;
-        counting_semaphore(ptrdiff_t count = 0) { semaphore = dispatch_semaphore_create(count); }
-        ~counting_semaphore() { dispatch_release(semaphore); }
-        void release(ptrdiff_t update = 1) { while(update--) dispatch_semaphore_signal(semaphore); }
-        void acquire() { dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER); }
+        dispatch_semaphore_t __semaphore;
+        counting_semaphore(ptrdiff_t count = 0) { __semaphore = dispatch_semaphore_create(count); }
+        ~counting_semaphore() { dispatch_release(__semaphore); }
+        void release(ptrdiff_t update = 1) { while(update--) dispatch_semaphore_signal(__semaphore); }
+        void acquire() { dispatch_semaphore_wait(__semaphore, DISPATCH_TIME_FOREVER); }
 #   else
-        sem_t semaphore;
-        counting_semaphore(ptrdiff_t count = 0) { sem_init(&semaphore, 0, count); }
-        ~counting_semaphore() { sem_destroy(&semaphore); }
-        void release(ptrdiff_t update = 1) { while(update--) sem_post(&semaphore); }
-        void acquire() { while (sem_wait(&semaphore) == -1 && errno == EINTR); }
+        sem_t __semaphore;
+        counting_semaphore(ptrdiff_t count = 0) { sem_init(&__semaphore, 0, count); }
+        ~counting_semaphore() { sem_destroy(&__semaphore); }
+        void release(ptrdiff_t update = 1) { while(update--) sem_post(&__semaphore); }
+        void acquire() { while (sem_wait(&__semaphore) == -1 && errno == EINTR); }
 #   endif
+        template<class Rep, class Period>
+        bool try_acquire_for(chrono::duration<Rep, Period> const& __rel_time)
+        {
+            chrono::nanoseconds __ns = chrono::system_clock::now().time_since_epoch() + chrono::duration_cast<chrono::nanoseconds>(__rel_time);
+            chrono::seconds __s = chrono::duration_cast<chrono::seconds>(__ns);
+            struct timespec __ts;
+            __ts.tv_sec = __s.count();
+            __ts.tv_nsec = (__ns - __s).count();
+            return __libcpp_semaphore_wait_timed(&__semaphore, &__ts);
+        }
+        bool try_acquire()
+        {
+            return try_acquire_for(chrono::nanoseconds::zero());
+        }
+        template <class Clock, class Duration>
+        bool try_acquire_until(chrono::time_point<Clock, Duration> const& __abs_time)
+        {
+            auto const current = Clock::now();
+            if (current >= __abs_time)
+                return try_acquire();
+            else
+                return try_acquire_for(__abs_time - current);
+        }
     };
     _LIBCPP_END_NAMESPACE_STD
 #endif
