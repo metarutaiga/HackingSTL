@@ -1,0 +1,35 @@
+//==============================================================================
+// HackingSTL : semaphore
+//
+// Copyright (c) 2020 TAiGA
+// https://github.com/metarutaiga/HackingSTL
+//==============================================================================
+#pragma once
+
+#include <cstddef>
+
+#if _LIBCPP_VERSION
+#   if defined(__APPLE__)
+#       include <dispatch/dispatch.h>
+#   else
+#       include <semaphore.h>
+#   endif
+    _LIBCPP_BEGIN_NAMESPACE_STD
+    struct counting_semaphore
+    {
+#   if defined(__APPLE__)
+        dispatch_semaphore_t semaphore;
+        counting_semaphore(ptrdiff_t count = 0) { semaphore = dispatch_semaphore_create(count); }
+        ~counting_semaphore() { dispatch_release(semaphore); }
+        void release(ptrdiff_t update = 1) { while(update--) dispatch_semaphore_signal(semaphore); }
+        void acquire() { dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER); }
+#   else
+        sem_t semaphore;
+        counting_semaphore(ptrdiff_t count = 0) { sem_init(&semaphore, 0, count); }
+        ~counting_semaphore() { sem_destroy(&semaphore); }
+        void release(ptrdiff_t update = 1) { while(update--) sem_post(&semaphore); }
+        void acquire() { while (sem_wait(&semaphore) == -1 && errno == EINTR); }
+#   endif
+    };
+    _LIBCPP_END_NAMESPACE_STD
+#endif
