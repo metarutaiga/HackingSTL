@@ -8,7 +8,7 @@
 
 #include <cstddef>
 
-#if _LIBCPP_VERSION
+#if _LIBCPP_VERSION >= 1000
 #   include <__threading_support>
     _LIBCPP_BEGIN_NAMESPACE_STD
     static inline size_t __libcpp_thread_setstacksize(size_t __s = 0)

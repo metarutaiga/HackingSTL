@@ -8,7 +8,9 @@
 
 #include <cstddef>
 
-#if _LIBCPP_VERSION
+#if _LIBCPP_VERSION >= 10000
+#   include <semaphore>
+#elif _LIBCPP_VERSION
 #   if defined(__APPLE__)
 #       include <dispatch/dispatch.h>
         static inline bool __libcpp_semaphore_wait_timed(dispatch_semaphore_t* __sem, struct timespec* __ts)
@@ -36,7 +38,7 @@
         counting_semaphore(ptrdiff_t count = 0) { sem_init(&__semaphore, 0, count); }
         ~counting_semaphore() { sem_destroy(&__semaphore); }
         void release(ptrdiff_t update = 1) { while(update--) sem_post(&__semaphore); }
-        void acquire() { while (sem_wait(&__semaphore) == -1 && errno == EINTR); }
+        void acquire() { while(sem_wait(&__semaphore) == -1 && errno == EINTR); }
 #   endif
         template<class Rep, class Period>
         bool try_acquire_for(chrono::duration<Rep, Period> const& __rel_time)
