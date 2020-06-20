@@ -8,8 +8,8 @@
 
 #include <cstddef>
 
-#if _LIBCPP_VERSION >= 10000
-#   include <semaphore>
+#if _LIBCPP_VERSION >= 11000
+#   include_next <semaphore>
 #elif _LIBCPP_VERSION
 #   if defined(__APPLE__)
 #       include <dispatch/dispatch.h>
