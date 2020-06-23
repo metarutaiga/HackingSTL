@@ -1,7 +1,6 @@
 //==============================================================================
 // HackingSTL : thread
 //
-// Copyright (c) 2020 TAiGA
 // https://github.com/metarutaiga/HackingSTL
 //==============================================================================
 #pragma once
@@ -18,7 +17,7 @@
         __s_ = __s;
         return __r;
     }
-    static inline int __libcpp_thread_create_(__libcpp_thread_t *__t, void *(*__func)(void *), void *__arg)
+    static inline int __libcpp_thread_create_ex(__libcpp_thread_t *__t, void *(*__func)(void *), void *__arg)
     {
         size_t __s = __libcpp_thread_setstacksize();
 
@@ -30,7 +29,7 @@
         return __r;
     }
     _LIBCPP_END_NAMESPACE_STD
-#   define __libcpp_thread_create __libcpp_thread_create_
+#   define __libcpp_thread_create __libcpp_thread_create_ex
 #   include <thread>
 #   undef __libcpp_thread_create
     _LIBCPP_BEGIN_NAMESPACE_STD

@@ -1,7 +1,6 @@
 //==============================================================================
 // HackingSTL : semaphore
 //
-// Copyright (c) 2020 TAiGA
 // https://github.com/metarutaiga/HackingSTL
 //==============================================================================
 #pragma once
@@ -13,28 +12,24 @@
 #elif _LIBCPP_VERSION
 #   if defined(__APPLE__)
 #       include <dispatch/dispatch.h>
-        static inline bool __libcpp_semaphore_wait_timed(dispatch_semaphore_t* __sem, struct timespec* __ts)
-        {
-            return dispatch_semaphore_wait(*__sem, dispatch_walltime(__ts, 0)) == 0;
-        }
 #   else
 #       include <semaphore.h>
-        static inline bool __libcpp_semaphore_wait_timed(sem_t* __sem, struct timespec* __ts)
-        {
-            return sem_timedwait(__sem, __ts) == 0;
-        }
 #   endif
     _LIBCPP_BEGIN_NAMESPACE_STD
-    struct counting_semaphore
+    class counting_semaphore
     {
 #   if defined(__APPLE__)
         dispatch_semaphore_t __semaphore;
+        bool __wait_timed(struct timespec* __ts) { return dispatch_semaphore_wait(__semaphore, dispatch_walltime(__ts, 0)) == 0; }
+    public:
         counting_semaphore(ptrdiff_t count = 0) { __semaphore = dispatch_semaphore_create(count); }
         ~counting_semaphore() { dispatch_release(__semaphore); }
         void release(ptrdiff_t update = 1) { while(update--) dispatch_semaphore_signal(__semaphore); }
         void acquire() { dispatch_semaphore_wait(__semaphore, DISPATCH_TIME_FOREVER); }
 #   else
         sem_t __semaphore;
+        bool __wait_timed(struct timespec* __ts) { return sem_timedwait(&__semaphore, __ts) == 0; }
+    public:
         counting_semaphore(ptrdiff_t count = 0) { sem_init(&__semaphore, 0, count); }
         ~counting_semaphore() { sem_destroy(&__semaphore); }
         void release(ptrdiff_t update = 1) { while(update--) sem_post(&__semaphore); }
@@ -48,13 +43,13 @@
             struct timespec __ts;
             __ts.tv_sec = __s.count();
             __ts.tv_nsec = (__ns - __s).count();
-            return __libcpp_semaphore_wait_timed(&__semaphore, &__ts);
+            return __wait_timed(&__ts);
         }
         bool try_acquire()
         {
             return try_acquire_for(chrono::nanoseconds::zero());
         }
-        template <class Clock, class Duration>
+        template<class Clock, class Duration>
         bool try_acquire_until(chrono::time_point<Clock, Duration> const& __abs_time)
         {
             auto const current = Clock::now();
