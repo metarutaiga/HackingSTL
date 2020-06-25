@@ -15,6 +15,7 @@
 #   else
 #       include <semaphore.h>
 #   endif
+#   include <chrono>
     _LIBCPP_BEGIN_NAMESPACE_STD
     class counting_semaphore
     {
@@ -60,4 +61,39 @@
         }
     };
     _LIBCPP_END_NAMESPACE_STD
+#endif
+
+#if _MSVC_STL_UPDATE
+#   include <WinBase.h>
+#   include <chrono>
+    _STD_BEGIN
+    class counting_semaphore
+    {
+        HANDLE __semaphore;
+    public:
+        counting_semaphore(ptrdiff_t count = 0) { __semaphore = CreateSemaphoreA(nullptr, static_cast<LONG>(count), LONG_MAX, nullptr); }
+        ~counting_semaphore() { CloseHandle(__semaphore); }
+        void release(ptrdiff_t update = 1) { ReleaseSemaphore(__semaphore, static_cast<LONG>(update), nullptr); }
+        void acquire() { WaitForSingleObject(__semaphore, INFINITE); }
+        template<class Rep, class Period>
+        bool try_acquire_for(chrono::duration<Rep, Period> const& __rel_time)
+        {
+            chrono::milliseconds __ms = chrono::duration_cast<chrono::milliseconds>(__rel_time);
+            return WaitForSingleObject(__semaphore, static_cast<DWORD>(__ms.count())) == WAIT_OBJECT_0;
+        }
+        bool try_acquire()
+        {
+            return try_acquire_for(chrono::nanoseconds::zero());
+        }
+        template<class Clock, class Duration>
+        bool try_acquire_until(chrono::time_point<Clock, Duration> const& __abs_time)
+        {
+            auto const current = Clock::now();
+            if (current >= __abs_time)
+                return try_acquire();
+            else
+                return try_acquire_for(__abs_time - current);
+        }
+    };
+    _STD_END
 #endif

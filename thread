@@ -42,3 +42,27 @@
     }
     _LIBCPP_END_NAMESPACE_STD
 #endif
+
+#if _MSVC_STL_UPDATE
+#   include <process.h>
+    _STD_BEGIN
+    static inline unsigned _thread_stacksize(unsigned __s = 0)
+    {
+        thread_local static unsigned __s_ = 0;
+        unsigned __r = __s_;
+        __s_ = __s;
+        return __r;
+    }
+    _STD_END
+#   define _beginthreadex(a,b,c,d,e,f) _beginthreadex(a,_thread_stacksize(),c,d,e,f)
+#   include <thread>
+#   undef _beginthreadex
+    _STD_BEGIN
+    template<class _Fp, class ..._Args>
+    thread stacking_thread(unsigned __s, _Fp&& __f, _Args&&... __args)
+    {
+        _thread_stacksize(__s);
+        return thread(__f, __args...);
+    }
+    _STD_END
+#endif
