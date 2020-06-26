@@ -29,6 +29,9 @@
         return __r;
     }
     _LIBCPP_END_NAMESPACE_STD
+#   if defined(_LIBCPP_THREAD)
+#       error #include <thread> is already included.
+#   endif
 #   define __libcpp_thread_create __libcpp_thread_create_ex
 #   include <thread>
 #   undef __libcpp_thread_create
@@ -54,6 +57,9 @@
         return __r;
     }
     _STD_END
+#   if defined(_THREAD_)
+#       error #include <thread> is already included.
+#   endif
 #   define _beginthreadex(a,b,c,d,e,f) _beginthreadex(a,_thread_setstacksize(),c,d,e,f)
 #   include <thread>
 #   undef _beginthreadex
