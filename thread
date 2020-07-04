@@ -12,6 +12,9 @@
     _LIBCPP_BEGIN_NAMESPACE_STD
     static inline size_t __libcpp_thread_setstacksize(size_t __s = 0)
     {
+        if (__s < PTHREAD_STACK_MIN && __s)
+            __s = PTHREAD_STACK_MIN;
+
         thread_local static size_t __s_ = 0;
         size_t __r = __s_;
         __s_ = __s;
@@ -51,6 +54,9 @@
     _STD_BEGIN
     static inline unsigned _thread_setstacksize(unsigned __s = 0)
     {
+        if (__s < 65536 && __s)
+            __s = 65536;
+
         thread_local static unsigned __s_ = 0;
         unsigned __r = __s_;
         __s_ = __s;
