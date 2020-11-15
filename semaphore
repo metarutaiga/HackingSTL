@@ -9,14 +9,21 @@
 
 #if _LIBCPP_VERSION >= 11000
 #   include_next <semaphore>
-#elif _LIBCPP_VERSION
+#elif _LIBCPP_VERSION || __GLIBCXX__
 #   if defined(__APPLE__)
 #       include <dispatch/dispatch.h>
 #   else
 #       include <semaphore.h>
 #   endif
 #   include <chrono>
-    _LIBCPP_BEGIN_NAMESPACE_STD
+#   if defined(_LIBCPP_BEGIN_NAMESPACE_STD)
+        _LIBCPP_BEGIN_NAMESPACE_STD
+#   elif defined(_GLIBCXX_BEGIN_NAMESPACE_VERSION)
+        namespace std {
+        _GLIBCXX_BEGIN_NAMESPACE_VERSION
+#   else
+        namespace std {
+#   endif
     class counting_semaphore
     {
 #   if defined(__APPLE__)
@@ -60,7 +67,14 @@
                 return try_acquire_for(__abs_time - current);
         }
     };
-    _LIBCPP_END_NAMESPACE_STD
+#   if defined(_LIBCPP_END_NAMESPACE_STD)
+        _LIBCPP_END_NAMESPACE_STD
+#   elif defined(_GLIBCXX_END_NAMESPACE_VERSION)
+        _GLIBCXX_END_NAMESPACE_VERSION
+        }
+#   else
+        }
+#   endif
 #endif
 
 #if _MSVC_STL_UPDATE
