@@ -7,7 +7,7 @@
 
 #include <cstddef>
 
-#if _LIBCPP_VERSION >= 11000
+#if _LIBCPP_VERSION >= 11000 && !defined(__APPLE__)
 #   include_next <semaphore>
 #elif _LIBCPP_VERSION || __GLIBCXX__
 #   if defined(__APPLE__)
@@ -24,6 +24,7 @@
 #   else
         namespace std {
 #   endif
+    template<ptrdiff_t LeastMaxValue = 0>
     class counting_semaphore
     {
 #   if defined(__APPLE__)
@@ -81,6 +82,7 @@
 #   include <WinBase.h>
 #   include <chrono>
     _STD_BEGIN
+    template<ptrdiff_t LeastMaxValue = 0>
     class counting_semaphore
     {
         HANDLE __semaphore;
